@@ -1,32 +1,6 @@
-# Additive model (1): y = f(x) + g(Z) + e  
 library(MASS)
 
-# Generates samples from f: y = f(x) + g(Z) + e
-GP_gen <- function(N, y, X, newX) { 
-  X <- as.matrix(X)
-  d <- ncol(X)
-  newX <- as.matrix(newX)
-  pars <- GP.lap(y, X)  # with Lap
-  rho_x <- pars["rho[1]"]^2
-  Kx <- rbfkernel(as.matrix(newX[ ,1]), rho_x, as.matrix(X[ ,1]))
-  Kxx <- rbfkernel(as.matrix(newX[ ,1]), rho_x)
-  K <- 0
-  
-  for(i in 1:d) {  # additive kernel
-    Ki <- rbfkernel(as.matrix(X[ ,i]), pars[i+1]^2)
-    K <- Ki + K
-  }
-  diag(K) <- diag(K) + pars["sigma"]^2
-  invK <- solve(K)
-  
-  Mu <- pars["mu"] + Kx %*% invK %*% y
-  Sigma <- Kxx - Kx %*% invK %*% t(Kx)
-  sampled_fs <- mvrnorm(N, Mu, Sigma)
-  
-  return(sampled_fs)
-}
-
-# Same as before but sampling from hyperparameters' posterior
+#  Generates samples from f: y = f(x) + g(Z) + e, sampling from hyperparameters' posterior
 GP_gen_mcmc <- function(N, y, X, newX) { 
   X <- as.matrix(X)
   d <- ncol(X)
@@ -35,7 +9,7 @@ GP_gen_mcmc <- function(N, y, X, newX) {
   standata <- list(N_obs = length(y), d = d, X = X, y_obs = y)
   stanfit <- sampling(GP_mod, data = standata,  # fit additive GP
                       iter = 1000+N, warmup = 1000, chains = 1, refresh = 0)
-  all.samples <- rstan::extract(stanfit, pars = c("sigma", rhonames), inc_warmup = F)  # "mu",
+  all.samples <- rstan::extract(stanfit, pars = c("sigma", rhonames), inc_warmup = F) 
   sampled_fs <- matrix(NA, nrow = N, ncol = nrow(newX)) 
   
   for(t in 1:N) {
@@ -63,6 +37,8 @@ GP_gen_mcmc <- function(N, y, X, newX) {
   return(sampled_fs)
 }
 
+# RBF kernel
+# https://cran.r-project.org/web/packages/rdetools/index.html
 rbfkernel <- function(X, sigma = 1, Y = NULL) {
   # test if X is a matrix
   if(!is.matrix(X)) {
