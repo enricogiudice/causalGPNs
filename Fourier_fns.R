@@ -1,6 +1,7 @@
 # These are the functions to generate non-linear data with the Fourier transform approach
 # lambda=0 is linear, larger lambdas result in more non-linear relationships
 
+# Fourier transform data x with randomly sampled weights
 Fou_trans <- function(x, lambda = NULL, sampled_weights = NULL, n_Four = 6) {
   
   n_Four <- min(n_Four, 10) # check we don't have too many
@@ -40,7 +41,7 @@ Fou_trans <- function(x, lambda = NULL, sampled_weights = NULL, n_Four = 6) {
 }
 
 
-# Generate data with random weights
+# Generate data with randomly sampled weights
 Fou_nldata <- function(dag, N, lambda, noise.sd, standardize = FALSE) {
   trueDAG <- 1*(dag != 0)  # the edge presence in the DAG
   n <- ncol(trueDAG)  # number of variables
@@ -79,7 +80,7 @@ Fou_nldata <- function(dag, N, lambda, noise.sd, standardize = FALSE) {
 }
 
 
-# Compute causal effect between all variables
+# Compute true causal effect between all variables given the sampled weights
 ComputeAllTrueFx <- function(adj, weights, scales, mcsamples, noise.sd, grid_size = 401) {
   n <- ncol(adj)
   fxmat <- solve(diag(n) - adj)
@@ -125,66 +126,3 @@ ComputeAllTrueFx <- function(adj, weights, scales, mcsamples, noise.sd, grid_siz
   
   return(true.fx)
 }
-
-
-
-
-
-
-
-
-
-# Deprecated
-# ComputeAllTrueFx <- function(adj, weights, mcsamples, noise.sd) {  
-#   n <- ncol(adj)
-#   fxmat <- solve(diag(n) - adj)
-#   true.fx <- array(0, dim = c(n, n, 401))  # to store the true effects
-#   top_order <- rev(BiDAG:::DAGtopartition(n, adj)$permy)  # go down order
-#   
-#   for(i in 1:n) {
-#     x <- top_order[i]
-#     x_levels <- seq(-2, 2, length.out = 401)
-#     
-#     for(y in top_order[-(1:i)]) {
-#       pars <- x
-#       curr_levels <- vector(mode = "list", length = n)  # list values at current nodes
-#       curr_levels[[x]] <- replicate(mcsamples, x_levels)  # of mcsamples x 401 matrices
-#       reach_end <- FALSE
-# 
-#       while(reach_end == FALSE) {
-#         
-#         for(par in pars) {
-#           chln <- which(adj[par, ] == 1, arr.ind = TRUE)  # find children of parents 
-#           act_chln <- chln[fxmat[chln,y] != 0]  # children that have an effect on y 
-#         
-#           for(chld in act_chln) {
-#             curr_levels[[chld]] <- curr_levels[[chld]] + Fou_trans(curr_levels[[par]], 
-#                                           sampled_weights = weights[par,chld, ])$data
-#           }
-#             if(chld != y) {  # add noise
-#               curr_levels[[chld]] <- apply(curr_levels[[chld]], 2, 
-#                                            function(f) f + rnorm(1, 0, noise.sd))
-#             }
-#             
-#             else {  # add path to the total effect
-#               true.fx[x,y, ] <- true.fx[x,y, ] + rowMeans(curr_levels[[chld]])
-#             }
-#           }
-#         finished <- act_chln == y  # which paths have ended
-#         reach_end <- all(finished)  # check if all paths have ended
-#         
-#         if(sum(finished) > 0) {  # move to next step and delete paths that ended
-#           pars <- act_chln[-which(finished)]
-#         }
-#         
-#         else {
-#           pars <- act_chln
-#         }
-#       }
-#     }
-#   }
-#   
-#   return(true.fx)
-# }
-
-
