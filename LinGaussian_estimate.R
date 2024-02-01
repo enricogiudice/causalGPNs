@@ -1,4 +1,3 @@
-# This makes Figure 3 but with Bestie
 library(tidyverse)
 library(BiDAG)
 library(matrixStats)
@@ -6,10 +5,10 @@ library(MASS)
 library(gridExtra)
 library(HDInterval)
 
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/Fourier_fns.R")
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/BayesStanFns.R")
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/fxsampling_fns.R")
-insertSource("~/Downloads/Nonlinear_CausalFx/GPscore.R", package = "BiDAG")
+source("Fourier_fns.R")
+source("BayesStanFns.R")
+source("fxsampling_fns.R")
+insertSource("GPscore.R", package = "BiDAG")
 
 set.seed(99)
 n <- 5      # number of nodes
@@ -20,7 +19,7 @@ grid_size <- 101  # steps in x axis
 myDAG <- pcalg::randomDAG(n, prob = 0.4, lB = 1, uB = 2) 
 trueDAG <- as(myDAG, "matrix")
 truegraph <- 1*(trueDAG != 0)
-knowndag <- T  # is graph known?
+knowndag <- T  # known/unknown graph
 Fou_result <- Fou_nldata(truegraph, N, lambda = lambda, noise.sd = 0.5, standardize = T) 
 data <- Fou_result$data
 
@@ -28,14 +27,14 @@ true.fx <- ComputeAllTrueFx(truegraph, weights = Fou_result$true.weights,
                             scales = Fou_result$scales, mcsamples = 10000, 
                             noise.sd = 0.5, grid_size = grid_size)
 testdata <- apply(data, 2, 
-                  FUN = function(x) seq(-2, 2, length.out = grid_size))  # are you sure?? we are getting fx from -2 to 2
+                  FUN = function(x) seq(-2, 2, length.out = grid_size))
 
 library(Bestie)
 library(BiDAG)
 library(MASS)
 library(LaplacesDemon)
 
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/fxsampling_fns.R")
+source("fxsampling_fns.R")
 
 # This functions returns the matrix of sampled coefficients
 sample_coefs <- function(adj, scoreParam) {
@@ -49,7 +48,7 @@ sample_coefs <- function(adj, scoreParam) {
     if(length(parents) > 0) {
       Mu <- res$mus[[i]]
       Sigma <- res$sigmas[[i]]
-      Sigma <- (Sigma + t(Sigma))/2  # force to be symmetric...
+      Sigma <- (Sigma + t(Sigma))/2
       df <- res$dfs[[i]]
       
       B[parents,i] <- rmvt(1, Mu, Sigma, df)
@@ -65,7 +64,7 @@ sample_intercepts <- function(adj, x, scoreParam, beta_mat) {
   aw_prime <- scoreParam$awpN
   R <- scoreParam$TN
   
-  W <- rWishart(1, aw_prime, solve(R))  # sample from parameter posterior (according to section B.1 in Gadget)
+  W <- rWishart(1, aw_prime, solve(R))  # sample from parameter posterior
   mu <- mvrnorm(1, nu_prime, solve(am_prime*W[,,1]))
   
   top_order <- rev(BiDAG:::DAGtopartition(n, adj)$permy)  # go down order
@@ -150,4 +149,3 @@ for(x in 1:n) {
 }
 
 grid.arrange(grobs = plots, layout_matrix = lay)
-
