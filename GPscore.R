@@ -1,5 +1,4 @@
-# GP Laplace approximate score 
-usrDAGcorescore <- function (j, parentnodes, n, param) { 
+usrDAGcorescore <- function (j, parentnodes, n, param) {  # GP Laplace approximate score 
   lp <- length(parentnodes)  # number of parents
   scoreconstvec <- param$scoreconstvec
   y <- param$data[ ,j]
