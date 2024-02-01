@@ -1,11 +1,6 @@
 # These are the functions to generate non-linear data with the Fourier transform approach
-# Scale does not currently work for the true.fx? 
-# Also the data should be scaled, otherwise we know the GP has trouble estimating. Or change the priors, max and min values
-# Right now we recompute all the causal effects every time, even with two identical dags. Is there a faster way? It's very slo
-# Mu, add it to the equations for the GP!
-# Rho should be squared?? Check cov_exp_quad vs rbfkernel!
+# lambda=0 is linear, larger lambdas result in more non-linear relationships
 
-# Fourier transform data with known or random weights
 Fou_trans <- function(x, lambda = NULL, sampled_weights = NULL, n_Four = 6) {
   
   n_Four <- min(n_Four, 10) # check we don't have too many
