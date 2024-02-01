@@ -1,3 +1,6 @@
+# Functions to implement the MC approach to estimate intervention distirbutions
+
+# Set searchspace for MCMC structure learning algorithms
 set.searchspace <- function(data, dual, method, par = 1) {
   startspace <- NULL
   
@@ -23,13 +26,13 @@ set.searchspace <- function(data, dual, method, par = 1) {
 }
 
 
-# Main function: For now hyperparameters are maximized; use model_gpcovf$sample directly for mcmc approach
+# Main function that estimates all intervention distributions given data and optionally a DAG
 GP.mcmc.fx <- function(data, searchspace, alpha = 0.05, order = FALSE, 
                        burnin = 0.2, iterations = 1000, mcsamples = 1, 
                        truedag = NULL, stepsave = 4, x_levels = seq(-2, 2, length.out = 101)) {
   n <- ncol(data)
   myScore <- searchspace$score
-  if(is.null(truedag)) {
+  if(is.null(truedag)) {  # if DAG is unknown
     start <- Sys.time()
   
     if(order) {
@@ -65,7 +68,7 @@ GP.mcmc.fx <- function(data, searchspace, alpha = 0.05, order = FALSE,
                 trace = rep(0, ndags))
     allnames <- c("sets", "newscore", paste0("rho[", 1:(n-1), "]"), "mu", "sigma")
     pars <- setNames(data.frame(matrix(NA, nrow = 0, ncol = n+3)), allnames)
-    parent.scores <- rep(list(pars), n)  # also store estimated (MAP) parameters of each variable given its parents
+    parent.scores <- rep(list(pars), n)  
     parent.indx <- rep(NA, n)  # to store index of current parent set for each variable
     weights <- NULL
   }
@@ -102,7 +105,7 @@ GP.mcmc.fx <- function(data, searchspace, alpha = 0.05, order = FALSE,
       }
       curr_score <- curr_score + loc_score  # build score
     }
-    # here now compute all causal fx
+    # now compute all intervention distributions
     fit$fx[[k]] <- EstimateAllFx(as.matrix(dag), parent.indx, parent.scores, data, mcsamples, x_levels)
     weights[k] <- curr_score - fit$trace[k]   # weight for current DAG 
   }
@@ -111,12 +114,12 @@ GP.mcmc.fx <- function(data, searchspace, alpha = 0.05, order = FALSE,
     fit$weights <- weights - logSumExp(weights)  # normalize weights
   }
   else {
-    fit$weights <- rep(log(1/ndags), ndags)
+    fit$weights <- rep(log(1/ndags), ndags)  # uniform weights if DAG is known
   }
   return(fit)
 }
 
-
+# MCMC structure learning with BGe score
 bge.partition.mcmc <- function(searchspace, alpha = 0.05, 
                                order = FALSE, burnin = 0.2, iterations = 1000) {
   BGEScore <- searchspace$score
@@ -138,7 +141,7 @@ bge.partition.mcmc <- function(searchspace, alpha = 0.05,
   return(bge.fit)
 }
 
-# New version
+# Estimate all intervention distributions for a given sampled DAG
 EstimateAllFx <- function(adj, parent.indexes, parent.scores, data, mcsamples, x_levels) {
   n <- ncol(adj)
   fxmat <- solve(diag(n) - adj)
@@ -181,18 +184,17 @@ EstimateAllFx <- function(adj, parent.indexes, parent.scores, data, mcsamples, x
         true_fx[x,y, ] <- rowMeans(curr_levels[[y]])  # save avg causal effect
       }
       curr_levels[[y]] <- apply(curr_levels[[y]], 2,  # add noise
-                                function(f) f + rnorm(1, mu, sigma))  # mu zero works, but why?
+                                function(f) f + rnorm(1, mu, sigma))
     }
   }
   
   return(true_fx)
 }
 
-
-GP_gen <- function(y, x, newX, sigma, rho, mu = 0) {  # different f for every column of newX, faster
+# Samples from the additive GP posterior
+GP_gen <- function(y, x, newX, sigma, rho, mu = 0) { 
   y <- as.matrix(y)
   x <- as.matrix(x)
-  #newX <- as.matrix(newX)
   K <- rbfkernel(x, rho^2)
   sampled_fs <- newX * 0  
   
@@ -224,6 +226,7 @@ table_effect <- function(fx, x, y) {
 }
 
 # RBF kernel
+# https://cran.r-project.org/web/packages/rdetools/index.html
 `rbfkernel` <- function(X, sigma = 1, Y = NULL) {
     # test if X is a matrix
     if(!is.matrix(X)) {
@@ -269,22 +272,10 @@ table_effect <- function(fx, x, y) {
     return(K)
 }
 
-# function to compute weighted variance
-weighted.var <- function(x, w, na.rm = FALSE) {
-  if (na.rm) {
-    w <- w[i <- !is.na(x)]
-    x <- x[i]
-  }
-  sum.w <- sum(w)
-  sum.w2 <- sum(w^2)
-  mean.w <- sum(x * w) / sum(w)
-  (sum.w / (sum.w^2 - sum.w2)) * sum(w * (x - mean.w)^2, na.rm =
-                                       na.rm)
-}
-
 # function for common legend
-g_legend<-function(a.gplot){
+g_legend <- function(a.gplot) {
   tmp <- ggplot_gtable(ggplot_build(a.gplot))
   leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
   legend <- tmp$grobs[[leg]]
-  return(legend)}
+  return(legend)
+}
