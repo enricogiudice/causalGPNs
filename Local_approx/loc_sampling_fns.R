@@ -1,3 +1,4 @@
+# Set searchspace for structure learning MCMC algorithms
 set.searchspace <- function(data, dual, method, par = 1, alpha = 0.05) {
   start <- Sys.time()
   startspace <- NULL
@@ -24,12 +25,12 @@ set.searchspace <- function(data, dual, method, par = 1, alpha = 0.05) {
        maxorder = searchspace$maxorder, endspace = searchspace$endspace, time = time)
 }
 
+# Order/partition MCMC for GPN
 GP.partition.mcmc <- function(data, searchspace, alpha = 0.05, 
                               order = FALSE, burnin = 0.33, iterations = 600) {
   start <- Sys.time()
   n <- ncol(data)
   myScore <- searchspace$score
-  #print("Start MCMC")
   if(order) {
     fit <- orderMCMC(myScore, MAP = FALSE, chainout = TRUE, alpha = alpha, 
                      startorder = searchspace$maxorder, scoretable = searchspace$scoretable, 
@@ -40,8 +41,8 @@ GP.partition.mcmc <- function(data, searchspace, alpha = 0.05,
                         scoretable = searchspace$scoretable, startspace = searchspace$endspace,
                         iterations = iterations, stepsave = 4)
   }
-  #print("Finish MCMC")
   inter <- Sys.time()
+  
   # Make list of sampled parents for each variable
   parent.scores <- data.frame(sets = character(0), newscore = character(0))  
   parent.scores <- rep(list(parent.scores), n)
@@ -59,7 +60,7 @@ GP.partition.mcmc <- function(data, searchspace, alpha = 0.05,
       set <- parent.scores[[x]]$sets
       pax <- dag[,x]
       pax.str <- paste(pax, collapse = "")  # parents of x
-      check <- is.na(match(set, pax.str))  # check if parent set is already there
+      check <- is.na(match(set, pax.str))  # check if parent set is already saved
       
       if(all(check)) {  # new parent set
         
@@ -79,7 +80,6 @@ GP.partition.mcmc <- function(data, searchspace, alpha = 0.05,
       curr_score <- curr_score + loc_score  # build score
     }
     weights[k] <- curr_score - fit$trace[k]   # weight for current DAG 
-    #cat(k*100/ndags, "%\n")
   }
   
   fit$weights <- weights - logSumExp(weights)  # normalize weights
@@ -92,6 +92,7 @@ GP.partition.mcmc <- function(data, searchspace, alpha = 0.05,
   return(fit)
 }
 
+# Order/partition MCMC for BGe score
 bge.partition.mcmc <- function(searchspace, alpha = 0.05, 
                                order = FALSE, burnin = 0.33, iterations = 600) {
   start <- Sys.time()
@@ -114,11 +115,4 @@ bge.partition.mcmc <- function(searchspace, alpha = 0.05,
   bge.fit$time <- as.numeric(time, units = "secs")
   
   return(bge.fit)
-}
-
-GP.partition.inter <- function(data, dual, order = F, par = 1) {
-  GP.searchspace = set.searchspace(data, dual, "GP", par = par)
-  gp.fit <-  GP.partition.mcmc(data, GP.searchspace, order = order, iterations = 1200)
-
-  return(gp.fit)
 }
