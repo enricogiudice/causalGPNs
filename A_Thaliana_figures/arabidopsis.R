@@ -6,11 +6,11 @@ library(matrixStats)
 library(questionr)
 library(gridExtra)
 
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/BayesStanFns.R")
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/fxsampling_fns.R")
-insertSource("~/Downloads/Nonlinear_CausalFx/GPscore.R", package = "BiDAG")
+source("BayesStanFns.R")
+source("fxsampling_fns.R")
+insertSource("GPscore.R", package = "BiDAG")
 
-arabidopsis <- read.csv("~/Downloads/Nonlinear_CausalFx/Real data/arabidopsis.txt", sep="")
+arabidopsis <- read.csv("A_Thaliana/arabidopsis.txt", sep="")
 some_genes <- c("PPDS2","PPDS1","GPPS","IPPI1","HDR","HDS",
                 "MECPS","CMK","MCT","DXR","DXPS3","DXPS2","DXPS1")
 
