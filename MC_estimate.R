@@ -1,6 +1,3 @@
-# run first with knowndag, then just the necessary with unknown dag, then use same fit for loc
-# right now we set mu=0, this is not exactly correct!
-# You should add mu always! Also to final f when you sample it! E(Y|do(X)), are you adding mu of Y?
 library(tidyverse)
 library(BiDAG)
 library(matrixStats)
@@ -8,10 +5,10 @@ library(MASS)
 library(gridExtra)
 library(HDInterval)
 
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/Fourier_fns.R")
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/BayesStanFns.R")
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/fxsampling_fns.R")
-insertSource("~/Downloads/Nonlinear_CausalFx/GPscore.R", package = "BiDAG")
+source("Fourier_fns.R")
+source("BayesStanFns.R")
+source("fxsampling_fns.R")
+insertSource("GPscore.R", package = "BiDAG")
 
 set.seed(99)
 n <- 5      # number of nodes
@@ -22,7 +19,7 @@ grid_size <- 101  # steps in x axis
 myDAG <- pcalg::randomDAG(n, prob = 0.4, lB = 1, uB = 2) 
 trueDAG <- as(myDAG, "matrix")
 truegraph <- 1*(trueDAG != 0)
-knowndag <- T  # is graph known?
+knowndag <- T  # known/unknwon graph
 Fou_result <- Fou_nldata(truegraph, N, lambda = lambda, noise.sd = 0.5, standardize = T) 
 data <- Fou_result$data
 
@@ -30,7 +27,7 @@ true.fx <- ComputeAllTrueFx(truegraph, weights = Fou_result$true.weights,
                             scales = Fou_result$scales, mcsamples = 10000, 
                             noise.sd = 0.5, grid_size = grid_size)
 testdata <- apply(data, 2, 
-                  FUN = function(x) seq(-2, 2, length.out = grid_size))  # are you sure?? we are getting fx from -2 to 2
+                  FUN = function(x) seq(-2, 2, length.out = grid_size))
 
 GP.searchspace = set.searchspace(data, dual = F, "GP")
 fit <- GP.mcmc.fx(data, GP.searchspace, order = F, iterations = 2500, mcsamples = 1, 
@@ -48,7 +45,6 @@ for(i in 1:nrow(all.pairs)) {
   
   xy_effect <- table_effect(fit$fx, x, y)  # get matrix of effects
   E_val <- apply(xy_effect, 1, weighted.mean, w = weights)  # expected value of effect
-  #Var <- apply(xy_effect, 1, weighted.var, w = weights)  # variance of effect
   quants <- apply(xy_effect, 1, whdquantile, probs = c(0.1, 0.9), weights = weights)
   fitted.vals <- data.frame(x = testdata[ ,x], E_val = E_val, 
                             lo = quants[1, ], hi = quants[2, ], xy_effect) %>%
@@ -60,7 +56,7 @@ for(i in 1:nrow(all.pairs)) {
     geom_line(alpha = 0.2) +
     scale_color_gradient(low='#d6d6d6', high='#d6d6d6') +
     {if(!knowndag) 
-      scale_color_gradient2(low='#a6a6a6', high='#545454', breaks = c(0.002, 0.021))} +#, midpoint = 0.36
+      scale_color_gradient2(low='#a6a6a6', high='#545454', breaks = c(0.002, 0.021))} +
     geom_ribbon(aes(ymin = lo, ymax = hi, group = NULL, color = NULL), 
                 alpha = 0.5, fill = "#f34444") + 
     geom_line(data = true.vals, aes(color = NULL), color = '#21ba35') +
@@ -88,5 +84,3 @@ grid.arrange(grobs = plots, layout_matrix = lay)
 plot_grid <- arrangeGrob(grobs = plots, layout_matrix = lay)
 
 # size = 9 x 7 | 8.4
-
-
