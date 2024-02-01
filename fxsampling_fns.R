@@ -1,5 +1,3 @@
-# Functions to implement the MC approach to estimate intervention distirbutions
-
 # Set searchspace for MCMC structure learning algorithms
 set.searchspace <- function(data, dual, method, par = 1) {
   startspace <- NULL
