@@ -6,11 +6,11 @@ library(matrixStats)
 library(questionr)
 library(gridExtra)
 
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/BayesStanFns.R")
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/fxsampling_fns.R")
-insertSource("~/Downloads/Nonlinear_CausalFx/GPscore.R", package = "BiDAG")
+source("BayesStanFns.R")
+source("fxsampling_fns.R")
+insertSource("GPscore.R", package = "BiDAG")
 
-arabidopsis <- read.csv("~/Downloads/Nonlinear_CausalFx/Real data/arabidopsis.txt", sep="")
+arabidopsis <- read.csv("A_thaliana/arabidopsis.txt", sep="")
 some_genes <- c("PPDS2","PPDS1","GPPS","IPPI1","HDR","HDS",
                 "MECPS","CMK","MCT","DXR","DXPS3","DXPS2","DXPS1")
 
@@ -25,21 +25,17 @@ arabidopsis %>%
 n <- ncol(data)
 
 
-#------- Global approach -------#
+# MC approach 
 set.seed(101)
 GP.searchspace = set.searchspace(data, dual = F, "GP")
 fit <- GP.mcmc.fx(data, GP.searchspace, order = F, iterations = 5000, 
                   mcsamples = 1, truedag = NULL)
-#saveRDS(fit, "ara_fit_glob_101(partition).rds")
 weights <- exp(fit$weights)
 
 grid_size <- 101
 testdata <- apply(data, 2, 
-                  FUN = function(x) seq(-2, 2, length.out = grid_size))  # maybe min(x) to max (x)? But we need to update the fit then
+                  FUN = function(x) seq(-2, 2, length.out = grid_size))
 
-
-#------- Look at global results -------#
-# other interesting: DXPS2, 'HDR', MECPS (non-linear, big variances tho), 
 do <- "PPDS1"  # intervention vab
 plots <- list()  # to store the plots
 
@@ -49,7 +45,6 @@ for(i in 1:(n-1)) {
   xy_effect <- table_effect(fit$fx, x, y)  # get matrix of effects
   E_val <- apply(xy_effect, 1, weighted.mean, w = weights)  # expected value of effect
   quants <- apply(xy_effect, 1, whdquantile, probs = c(0.1, 0.9), weights = weights)
-  
   
   fitted.vals <- data.frame(x = testdata[ ,x], E_val = E_val, 
                             lo = quants[1, ], hi = quants[2, ], xy_effect) %>%
@@ -83,9 +78,9 @@ grid.arrange(grobs = plots, layout_matrix = lay)
 # size = 3.33 | 5 x 9
 
 
-#------- Local approach -------#
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/Local approach/loc_fns.R")
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/Local approach/sampling_fns.R")
+# Local approximation
+source("Local_approx/loc_fns.R")
+source("Local_approx/loc_sampling_fns.R")
 
 post.samples <- 800  # number of total posterior samples to generate
 ndags <- length(fit$trace)
@@ -165,10 +160,8 @@ lay <- rbind(matrix(1:(n-1), ncol = 6))
 grid.arrange(grobs = plots, layout_matrix = lay)
 
 
-
-#------- Joy plots (global) -------#
+# Joy plots
 library(ggridges)
-# goodones: (11,1) 
 
 x <- 7  # intervention vab
 y <- 11 # outcome vab
@@ -193,9 +186,4 @@ ggplot(joy_data, aes(x = value, y = fct_rev(as.factor(x)), height = after_stat(d
   scale_y_discrete(expand = expand_scale(add = c(0, 1))) +
   theme(legend.position = "none")
 
-# size = 4.5 x 6.5
-
-
-    
-    
-    
+# size = 4.5 x 6.5 
