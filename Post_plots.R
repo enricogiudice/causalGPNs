@@ -1,4 +1,3 @@
-# This script produces a plot comparing the posteriors over E(Y|do(X=x))
 library(tidyverse)
 library(BiDAG)
 library(matrixStats)
@@ -8,12 +7,13 @@ library(gRbase)
 library(questionr)
 library(transport)
 
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/Fourier_fns.R")
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/BayesStanFns.R")
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/fxsampling_fns.R")
-insertSource("~/Downloads/Nonlinear_CausalFx/GPscore.R", package = "BiDAG")
+source("Fourier_fns.R")
+source("BayesStanFns.R")
+source("fxsampling_fns.R")
+insertSource("GPscore.R", package = "BiDAG")
 
-add.noise <- function(to_add, y, x, newX, sigma, rho) {  # samples a seperate f for every mcsample
+# Samples a seperate f for every sample
+add.noise <- function(to_add, y, x, newX, sigma, rho) { 
   to_add <- as.matrix(to_add)
   newX <- as.matrix(newX)
   
@@ -53,7 +53,7 @@ for(i in 1:nrow(all.comb)) {
 true.post <- rep(NA, dag.counter)
 allnames <- c("sets", "newscore", paste0("rho[", 1:(n-1), "]"), "mu", "sigma")
 pars <- setNames(data.frame(matrix(NA, nrow = 0, ncol = n+3)), allnames)
-parent.scores <- rep(list(pars), n)  # also store estimated (MAP) parameters of each variable given its parents
+parent.scores <- rep(list(pars), n)
 
 for(k in 1:dag.counter) {
   dag <- all.dags[[k]]
@@ -85,7 +85,6 @@ for(k in 1:dag.counter) {
     curr_score <- curr_score + loc_score  # build score
   }
   true.post[k] <- curr_score
-  if(k%%100==0){cat(round(k*100/dag.counter),"%\n")}
 }
 true.post <- true.post - logSumExp(true.post)  # normalize
 
@@ -147,7 +146,7 @@ for(k in 1:length(mcsamples)) {
 }
 
 
-#------ Loop over different samples ------#
+# Loop over different samples
 iters <- c(470, 550, 660, 810, 10e2, 13e2, 16e2, 21e2, 27e2, 36e2, 49e2, 67e2, 93e2, 13e3, 18e3)  
 reps <- 50  # number of realizations to average over
 results <- data.frame()
@@ -157,8 +156,8 @@ set.seed(101 + r)
 
 for(i in 1:length(iters)) {
   
-  #------ Global approach ------#
-  source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/fxsampling_fns.R")
+  # MC approach
+  source("fxsampling_fns.R")
   glob_start <- Sys.time()
   GP.searchspace = set.searchspace(data, dual = F, "GP")
   fit <- GP.mcmc.fx(data, GP.searchspace, iterations = iters[i], burnin = 250/iters[i],
@@ -172,9 +171,9 @@ for(i in 1:length(iters)) {
                                        group = "MC approach",
                                        time = as.numeric(glob_time, units = "secs")))
 
-  #------ Local approach ------#
-  source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/Local approach/loc_fns.R")
-  source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/Local approach/sampling_fns.R")
+  # Local approximation
+  source("Local_approx/loc_fns.R")
+  source("Local_approx/loc_sampling_fns.R")
   post.samples <- (iters[i] - 250)/2
   loc_start <- Sys.time()
 
@@ -228,8 +227,8 @@ for(i in 1:length(iters)) {
                                        group = "Local approximation",
                                        time = as.numeric(loc_time, units = "secs")))
   
-  #------ True posteriors ------#
-  source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/fxsampling_fns.R")
+  # True posteriors
+  source("fxsampling_fns.R")
   post_fx <- vector()  # to store all the true sampled effects
   totsamples <- (iters[i] - 250)/2  # number of total samples
   mcsamples <- table(sample(1:dag.counter, totsamples, replace = T, prob = exp(true.post)))
@@ -288,7 +287,6 @@ for(i in 1:length(iters)) {
                                           group = "True posterior",
                                           time = 0))
   }
-  cat(r,"\n")
 }
 
 
@@ -300,7 +298,7 @@ results %>%  # average reps
                         levels = c("MC approach", "Local approximation", "True posterior"), 
                         ordered = T)) -> avg_results
 
-#------ Plot of distances ------#
+# Plot of distances
 color3 <- c('#db0000','#00acc7',"darkgreen")
 ggplot(avg_results, aes(x = iter, y = wass, group = group)) +
   geom_line(aes(linetype = group)) +
@@ -317,7 +315,7 @@ ggplot(avg_results, aes(x = iter, y = wass, group = group)) +
   
 # size = 3.5 x 4.3
 
-#------ Plot of times ------#
+# Plot of times
 avg_results %>%
   filter(group %in% c("MC approach", "Local approximation")) %>%
   ggplot(aes(x = time, y = wass, group = group)) +
@@ -336,7 +334,7 @@ avg_results %>%
     annotate(geom = "text", x = 124.13234, y = 0.20578470, label = "6375", hjust = "center", color = "#858585", size = 3.1) +
     annotate(geom = "text", x = 421.88783, y = 0.05969357, label = "6375", hjust = "center", color = "#858585", size = 3.1) 
 
-#------ Density plots of last (18e3) estimates ------#
+# Density plots of last (18e3) estimates
 coll_fx <- rbind(data.frame(fx = glob_effect, Method = "MC approach", weights = fit.weights),
                  data.frame(fx = xy_effect[ ,1], Method = "Local approximation", weights = 1/length(xy_effect[ ,1])),
                  data.frame(fx = true_fx, Method = "True posterior", weights = 1/length(true_fx)))
@@ -356,12 +354,6 @@ ggplot(coll_fx) +
 
 # size = 3.6 x 4.7
 
-
-
-exp.seq <- function(min, max, length) {
-  round(exp(seq(log(min), log(max), length.out = length)))
-}
-
 # Plots campring three densities
 ggplot(coll_fx) +
   geom_density(aes(x = fx, fill = Method, color = Method, weight = weights), alpha = 0.11, bw = bw, adjust = 6) +
@@ -376,5 +368,3 @@ ggplot(coll_fx) +
   ggtitle(paste0(length(post_fx), " Samples"))
 
 ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], ncol = 2, nrow = 2, common.legend = TRUE, legend = "bottom")
-
-# r=49 for 10000
