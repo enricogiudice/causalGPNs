@@ -1,6 +1,3 @@
-# These are the functions to generate non-linear data with the Fourier transform approach
-# lambda=0 is linear, larger lambdas result in more non-linear relationships
-
 # Fourier transform data x with randomly sampled weights
 Fou_trans <- function(x, lambda = NULL, sampled_weights = NULL, n_Four = 6) {
   
