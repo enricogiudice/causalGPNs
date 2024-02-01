@@ -1,4 +1,3 @@
-# In this script we look at how to compute the posterior of E(Y|do(X=x)) with Bestie.
 library(Bestie)
 library(BiDAG)
 library(MASS)
@@ -7,7 +6,7 @@ library(janitor)
 library(gridExtra)
 library(LaplacesDemon)
 
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/fxsampling_fns.R")
+source("fxsampling_fns.R")
 
 # This functions returns the matrix of sampled coefficients
 sample_coefs <- function(adj, scoreParam) {
@@ -21,7 +20,7 @@ sample_coefs <- function(adj, scoreParam) {
     if(length(parents) > 0) {
       Mu <- res$mus[[i]]
       Sigma <- res$sigmas[[i]]
-      Sigma <- (Sigma + t(Sigma))/2  # force to be symmetric...
+      Sigma <- (Sigma + t(Sigma))/2 
       df <- res$dfs[[i]]
     
       B[parents,i] <- rmvt(1, Mu, Sigma, df)
@@ -37,7 +36,7 @@ sample_intercepts <- function(adj, x, scoreParam, beta_mat) {
   aw_prime <- scoreParam$awpN
   R <- scoreParam$TN
   
-  W <- rWishart(1, aw_prime, solve(R))  # sample from parameter posterior (according to section B.1 in Gadget)
+  W <- rWishart(1, aw_prime, solve(R))  # sample from parameter posterior 
   mu <- mvrnorm(1, nu_prime, solve(am_prime*W[,,1]))
   
   top_order <- rev(BiDAG:::DAGtopartition(n, adj)$permy)  # go down order
@@ -56,7 +55,7 @@ sample_intercepts <- function(adj, x, scoreParam, beta_mat) {
 
 
 # Apply to arabidopsis data
-arabidopsis <- read.csv("~/Downloads/Nonlinear_CausalFx/Real data/arabidopsis.txt", sep="")
+arabidopsis <- read.csv("A_thaliana_figures/arabidopsis.txt", sep="")
 some_genes <- c("PPDS2","PPDS1","GPPS","IPPI1","HDR","HDS",
                 "MECPS","CMK","MCT","DXR","DXPS3","DXPS2","DXPS1")
 
@@ -99,7 +98,6 @@ for(k in 1:ndags) {
   all_fx[[k]] <- dag_fx
 }
 
-
 # Plot bge results
 testdata <- apply(data, 2, 
                   FUN = function(x) seq(-2, 2, length.out = grid_size))
@@ -138,5 +136,4 @@ for(i in 1:(n-1)) {
 lay <- rbind(matrix(1:(n-1), ncol = 6))
 grid.arrange(grobs = plots, layout_matrix = lay)
 
-# size = 4 x 10 (?)
-# don't care I'm doing 3.33 x 9
+# size = 3.33 x 9
