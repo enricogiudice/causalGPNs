@@ -55,7 +55,7 @@ sample_intercepts <- function(adj, x, scoreParam, beta_mat) {
 
 
 # Apply to arabidopsis data
-arabidopsis <- read.csv("A_thaliana_figures/arabidopsis.txt", sep="")
+arabidopsis <- read.csv("A_thaliana/arabidopsis.txt", sep="")
 some_genes <- c("PPDS2","PPDS1","GPPS","IPPI1","HDR","HDS",
                 "MECPS","CMK","MCT","DXR","DXPS3","DXPS2","DXPS1")
 
