@@ -3,8 +3,8 @@ library(bridgesampling)
 options(mc.cores = parallel::detectCores())
 
 # Compile stan files
-Gauss_mod <- stan_model("/Users/giudic0000/Downloads/Nonlinear_CausalFx/Gauss.stan") 
-GP_mod <- stan_model("/Users/giudic0000/Downloads/Nonlinear_CausalFx/Add.stan") 
+Gauss_mod <- stan_model("Gauss.stan") 
+GP_mod <- stan_model("Add.stan") 
 
 # Laplace approximation of log marginal likelihood
 Laplace <- function(optim) {
