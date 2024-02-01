@@ -7,7 +7,6 @@ data {
 
 parameters {
   vector<lower=0, upper=10>[d] rho;
-  //real<lower=-2, upper=2> mu;
   real<lower=0, upper=2> sigma;
 }
 
@@ -23,7 +22,6 @@ model {
   L_cov = cholesky_decompose(cov);
   
   target += inv_gamma_lpdf(rho | 2, 2);
-  //target += std_normal_lpdf(mu);
   target += inv_gamma_lpdf(sigma | 1, 1);
   target += multi_normal_cholesky_lpdf(y_obs | rep_vector(0, N_obs), L_cov);
 }
