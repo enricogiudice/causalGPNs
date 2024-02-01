@@ -5,13 +5,13 @@ library(matrixStats)
 library(gridExtra)
 library(questionr)
 
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/Local approach/loc_fns.R")
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/Fourier_fns.R")
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/BayesStanFns.R")
-source("/Users/giudic0000/Downloads/Nonlinear_CausalFx/Local approach/sampling_fns.R")
-insertSource("~/Downloads/Nonlinear_CausalFx/GPscore.R", package = "BiDAG")
+source("Local_approx/loc_fns.R")
+source("Local_approx/Fourier_fns.R")
+source("Local_approx/BayesStanFns.R")
+source("Local_approx/sampling_fns.R")
+insertSource("GPscore.R", package = "BiDAG")
 
-set.seed(99)  # was 101
+set.seed(99) 
 n <- 5      # number of nodes
 N <- 50     # number of samples
 lambda <- 1 # non-linearity parameter
@@ -20,7 +20,7 @@ grid_size <- 101  # steps in x axis
 myDAG <- pcalg::randomDAG(n, prob = 0.4, lB = 1, uB = 2) 
 trueDAG <- as(myDAG, "matrix")
 truegraph <- 1*(trueDAG != 0)
-knowndag <- F  # is graph known?
+knowndag <- F  # known/unknown graph
 Fou_result <- Fou_nldata(truegraph, N, lambda = lambda, noise.sd = 0.5, standardize = T) 
 data <- Fou_result$data
 
