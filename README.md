@@ -6,9 +6,9 @@ This repository contains all the code to reproduce the results in [Bayesian Caus
 The .Stan files contain code for the Gaussian (Gauss.stan) and additive GP (Add.stan) models.
 - BayesStanFns.R and GPscore.R contain functions to compute the score according to the GP and GP^2 models respectively.
 - Fourier_fns.R contains functions to generate non-linear data for the simulations.
+- Fxsampling_fns.R contains the functions to implement Bayesian causal inference with the GPN model.
 - LinGaussian_estimate.R generates the simulation results for the linear-Gaussian model for causal inference from observational data.
 - MC_estimate.R generates the simulation results for causal inference with the GPN model.
-- Fxsampling_fns.R contains the functions to implement Bayesian causal inference with the GPN model.
 
 Reference
 ---------
